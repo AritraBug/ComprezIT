@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch ComprezIT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-bottom: 40px;
+        }
+        .header {
+            background-color: #4a6baf;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        .upload-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-upload:hover {
+            border-color: #4a6baf;
+        }
+        .file-upload input {
+            display: none;
+        }
+        .file-upload i {
+            font-size: 50px;
+            color: #4a6baf;
+            margin-bottom: 15px;
+        }
+        .options-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        .slider-value {
+            font-weight: bold;
+        }
+        .format-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .format-option {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .format-option:hover, .format-option.active {
+            background-color: #4a6baf;
+            color: white;
+            border-color: #4a6baf;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #4a6baf;
+        }
+        .nav-pills .nav-link {
+            color: #4a6baf;
+        }
+        .flash-message {
+            margin-bottom: 20px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+        .file-item .file-icon {
+            margin-right: 15px;
+            color: #4a6baf;
+        }
+        .file-item .file-name {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-item .file-size {
+            margin: 0 15px;
+            color: #666;
+        }
+        .file-item .remove-file {
+            color: #dc3545;
+            cursor: pointer;
+        }
+        .results-container {
+            display: none;
+            margin-top: 30px;
+        }
+        .progress {
+            height: 25px;
+        }
+        #filesList {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1><i class="fas fa-compress-alt"></i> ComprezIT</h1>
+            <p class="mb-0">Compress and optimize multiple images at once</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Navigation tabs -->
+        <ul class="nav nav-pills mb-4">
+            <li class="nav-item">
+                <a class="nav-link" href="/">Single Image</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/batch">Batch Processing</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/advanced">Advanced Options</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+        </ul>
+
+        <div class="row">
+            <div class="col-md-7">
+                <div class="upload-container">
+                    <h2 class="mb-4">Upload Multiple Images</h2>
+                    <form id="batchUploadForm" enctype="multipart/form-data">
+                        <div class="file-upload mb-4" id="fileUploadArea">
+                            <input type="file" name="files[]" id="fileInput" multiple accept=".png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h4>Drag & Drop your images here</h4>
+                            <p>or click to select files</p>
+                            <p class="text-muted">Supports: PNG, JPG, JPEG, GIF, WEBP, BMP, TIFF (Max: 32MB)</p>
+                        </div>
+                        
+                        <div id="filesList" class="mb-4" style="display:none;">
+                            <!-- Files will be added here dynamically -->
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="compressBtn" disabled>
+                                <i class="fas fa-compress-alt me-2"></i> Compress All Images
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="options-container">
+                    <h2 class="mb-4">Batch Compression Options</h2>
+                    
+                    <div class="slider-container">
+                        <label for="qualityRange" class="form-label">Quality: <span id="qualityValue" class="slider-value">85</span>%</label>
+                        <input type="range" class="form-range" id="qualityRange" name="quality" min="1" max="100" value="85" form="batchUploadForm">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>1%</span>
+                            <span>50%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+
+                    <div class="slider-container">
+                        <label for="resizeRange" class="form-label">Resize: <span id="resizeValue" class="slider-value">100</span>%</label>
+                        <input type="range" class="form-range" id="resizeRange" name="resize_percentage" min="10" max="100" value="100" form="batchUploadForm">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>10%</span>
+                            <span>50%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Output Format</label>
+                        <div class="format-selector">
+                            <input type="hidden" name="format" id="formatInput" value="" form="batchUploadForm">
+                            <div class="format-option" data-format="jpg">JPG</div>
+                            <div class="format-option" data-format="png">PNG</div>
+                            <div class="format-option" data-format="webp">WEBP</div>
+                            <div class="format-option active" data-format="">Original</div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i> Files will be compressed with the same settings and bundled into a single ZIP file for download.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Container (initially hidden) -->
+        <div class="results-container" id="resultsContainer">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-tasks me-2"></i> Compression Results</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Progress Bar -->
+                    <div class="mb-4" id="progressArea">
+                        <h5>Processing Images...</h5>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div id="summaryArea" style="display:none;">
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle me-2"></i> Compression Complete!</h5>
+                            <p class="mb-0">Successfully processed <span id="processedCount">0</span> out of <span id="totalCount">0</span> images.</p>
+                        </div>
+                        
+                        <div class="row text-center mb-4">
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6>Total Original Size</h6>
+                                        <h3 id="totalOriginalSize">0 MB</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6>Total Compressed Size</h6>
+                                        <h3 id="totalCompressedSize">0 MB</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6>Total Space Saved</h6>
+                                        <h3 id="totalSaved">0 MB</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a id="downloadZipBtn" href="#" class="btn btn-success btn-lg">
+                                <i class="fas fa-download me-2"></i> Download All Compressed Images (ZIP)
+                            </a>
+                            <button id="startNewBtn" class="btn btn-outline-primary">
+                                <i class="fas fa-redo me-2"></i> Start New Batch
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>ComprezIT - A simple tool to compress and optimize your images in batch</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const filesList = document.getElementById('filesList');
+            const compressBtn = document.getElementById('compressBtn');
+            const qualityRange = document.getElementById('qualityRange');
+            const qualityValue = document.getElementById('qualityValue');
+            const resizeRange = document.getElementById('resizeRange');
+            const resizeValue = document.getElementById('resizeValue');
+            const formatOptions = document.querySelectorAll('.format-option');
+            const formatInput = document.getElementById('formatInput');
+            const batchUploadForm = document.getElementById('batchUploadForm');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const progressArea = document.getElementById('progressArea');
+            const summaryArea = document.getElementById('summaryArea');
+            const progressBar = document.querySelector('.progress-bar');
+            const processedCount = document.getElementById('processedCount');
+            const totalCount = document.getElementById('totalCount');
+            const totalOriginalSize = document.getElementById('totalOriginalSize');
+            const totalCompressedSize = document.getElementById('totalCompressedSize');
+            const totalSaved = document.getElementById('totalSaved');
+            const downloadZipBtn = document.getElementById('downloadZipBtn');
+            const startNewBtn = document.getElementById('startNewBtn');
+            
+            // File data storage
+            let filesArray = [];
+            
+            // Handle file upload area click
+            fileUploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // Handle file drag & drop
+            fileUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = '#4a6baf';
+                fileUploadArea.style.backgroundColor = '#f8f9fa';
+            });
+            
+            fileUploadArea.addEventListener('dragleave', function() {
+                fileUploadArea.style.borderColor = '#ddd';
+                fileUploadArea.style.backgroundColor = 'transparent';
+            });
+            
+            fileUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = '#ddd';
+                fileUploadArea.style.backgroundColor = 'transparent';
+                
+                if (e.dataTransfer.files.length) {
+                    handleFiles(e.dataTransfer.files);
+                }
+            });
+            
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+            
+            // Handle quality slider
+            qualityRange.addEventListener('input', function() {
+                qualityValue.textContent = this.value;
+            });
+            
+            // Handle resize slider
+            resizeRange.addEventListener('input', function() {
+                resizeValue.textContent = this.value;
+            });
+            
+            // Handle format selection
+            formatOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    formatOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    formatInput.value = this.getAttribute('data-format');
+                });
+            });
+            
+            // Handle form submission
+            batchUploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (filesArray.length > 0) {
+                    compressImages();
+                }
+            });
+            
+            // Handle start new batch
+            startNewBtn.addEventListener('click', function() {
+                resetForm();
+            });
+            
+            // Process files
+            function handleFiles(files) {
+                if (files.length) {
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        if (isImageFile(file)) {
+                            addFileToList(file);
+                        }
+                    }
+                    
+                    updateUI();
+                }
+            }
+            
+            // Check if file is an image
+            function isImageFile(file) {
+                const acceptedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'];
+                return acceptedTypes.includes(file.type);
+            }
+            
+            // Add file to list
+            function addFileToList(file) {
+                // Check if file already exists
+                const exists = filesArray.some(f => f.name === file.name && f.size === file.size);
+                if (!exists) {
+                    filesArray.push(file);
+                    
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                        <div class="file-icon"><i class="fas fa-file-image"></i></div>
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                        <div class="remove-file" data-filename="${file.name}"><i class="fas fa-times-circle"></i></div>
+                    `;
+                    
+                    // Add event listener to remove button
+                    fileItem.querySelector('.remove-file').addEventListener('click', function() {
+                        const filename = this.getAttribute('data-filename');
+                        removeFile(filename);
+                        fileItem.remove();
+                        updateUI();
+                    });
+                    
+                    filesList.appendChild(fileItem);
+                }
+            }
+            
+            // Remove file from array
+            function removeFile(filename) {
+                filesArray = filesArray.filter(file => file.name !== filename);
+            }
+            
+            // Update UI based on files
+            function updateUI() {
+                if (filesArray.length > 0) {
+                    fileUploadArea.style.display = 'none';
+                    filesList.style.display = 'block';
+                    compressBtn.disabled = false;
+                } else {
+                    fileUploadArea.style.display = 'block';
+                    filesList.style.display = 'none';
+                    compressBtn.disabled = true;
+                }
+            }
+            
+            // Format file size
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+                else return (bytes / 1048576).toFixed(2) + ' MB';
+            }
+            
+            // Compress images
+            function compressImages() {
+                // Show results container and hide form
+                resultsContainer.style.display = 'block';
+                progressArea.style.display = 'block';
+                summaryArea.style.display = 'none';
+                
+                // Create FormData
+                const formData = new FormData();
+                
+                // Add all files
+                filesArray.forEach(file => {
+                    formData.append('files[]', file);
+                });
+                
+                // Add parameters
+                formData.append('quality', qualityRange.value);
+                formData.append('resize_percentage', resizeRange.value);
+                formData.append('format', formatInput.value);
+                
+                // Update progress
+                progressBar.style.width = '10%';
+                
+                // Send AJAX request
+                fetch('/batch_compress', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    progressBar.style.width = '50%';
+                    return response.json();
+                })
+                .then(data => {
+                    progressBar.style.width = '100%';
+                    
+                    // After a short delay, show results
+                    setTimeout(() => {
+                        displayResults(data);
+                    }, 500);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred during processing. Please try again.');
+                    resetForm();
+                });
+            }
+            
+            // Display compression results
+            function displayResults(data) {
+                if (data.success) {
+                    // Hide progress and show summary
+                    progressArea.style.display = 'none';
+                    summaryArea.style.display = 'block';
+                    
+                    // Set download link
+                    downloadZipBtn.href = `/batch_download/${data.batch_id}/${data.zip_filename}`;
+                    
+                    // Update counters
+                    processedCount.textContent = data.successful_files;
+                    totalCount.textContent = data.total_files;
+                    
+                    // Calculate totals
+                    let originalSize = 0;
+                    let compressedSize = 0;
+                    
+                    data.results.forEach(result => {
+                        if (result.success) {
+                            originalSize += result.original_size;
+                            compressedSize += result.compressed_size;
+                        }
+                    });
+                    
+                    // Update summary
+                    totalOriginalSize.textContent = formatFileSize(originalSize);
+                    totalCompressedSize.textContent = formatFileSize(compressedSize);
+                    totalSaved.textContent = formatFileSize(originalSize - compressedSize);
+                } else {
+                    alert('Error: ' + data.error);
+                    resetForm();
+                }
+            }
+            
+            // Reset form and UI
+            function resetForm() {
+                batchUploadForm.reset();
+                filesArray = [];
+                filesList.innerHTML = '';
+                resultsContainer.style.display = 'none';
+                updateUI();
+                
+                // Scroll to top
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    </script>
+</body>
+</html>

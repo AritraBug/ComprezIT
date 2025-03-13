@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Options - ComprezIT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-bottom: 40px;
+        }
+        .header {
+            background-color: #4a6baf;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        .upload-container, .options-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-upload:hover {
+            border-color: #4a6baf;
+        }
+        .file-upload input {
+            display: none;
+        }
+        .file-upload i {
+            font-size: 50px;
+            color: #4a6baf;
+            margin-bottom: 15px;
+        }
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        .slider-value {
+            font-weight: bold;
+        }
+        .format-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .format-option {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .format-option:hover, .format-option.active {
+            background-color: #4a6baf;
+            color: white;
+            border-color: #4a6baf;
+        }
+        .filter-option {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .filter-option:hover, .filter-option.active {
+            background-color: #4a6baf;
+            color: white;
+            border-color: #4a6baf;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #4a6baf;
+        }
+        .nav-pills .nav-link {
+            color: #4a6baf;
+        }
+        .flash-message {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .filter-preview {
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1><i class="fas fa-compress-alt"></i> ComprezIT</h1>
+            <p class="mb-0">Compress and optimize your images without losing quality</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-message">
+            {% for message in messages %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Navigation tabs -->
+        <ul class="nav nav-pills mb-4">
+            <li class="nav-item">
+                <a class="nav-link" href="/">Single Image</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/batch">Batch Processing</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/advanced">Advanced Options</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
+        </ul>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="upload-container">
+                    <h2 class="mb-4">Upload Image</h2>
+                    <form action="/compress" method="post" enctype="multipart/form-data" id="uploadForm">
+                        <div class="file-upload mb-4" id="fileUploadArea">
+                            <input type="file" name="file" id="fileInput" accept=".png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h4>Drag & Drop your image here</h4>
+                            <p>or click to select a file</p>
+                            <p class="text-muted">Supports: PNG, JPG, JPEG, GIF, WEBP, BMP, TIFF (Max: 32MB)</p>
+                        </div>
+                        <div id="filePreview" class="mb-4" style="display:none;">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <i class="fas fa-file-image fa-2x text-primary"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h5 class="card-title mb-0" id="fileName">filename.jpg</h5>
+                                            <p class="card-text" id="fileSize">Size: 0 KB</p>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- EXIF Data Preview -->
+                        <div id="exifDataContainer" class="mb-4" style="display:none;">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">EXIF Data</h5>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleExif">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body" id="exifDataContent" style="display:none;">
+                                    <div class="text-center mb-3" id="exifLoader">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p>Loading EXIF data...</p>
+                                    </div>
+                                    <div id="exifData"></div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="compressBtn" disabled>
+                                <i class="fas fa-compress-alt me-2"></i> Compress Image
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="options-container">
+                    <h2 class="mb-4">Advanced Options</h2>
+                    
+                    <!-- Basic Compression Options -->
+                    <div class="section-title">
+                        <h4><i class="fas fa-sliders-h me-2"></i> Basic Compression</h4>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label for="qualityRange" class="form-label">Quality: <span id="qualityValue" class="slider-value">85</span>%</label>
+                        <input type="range" class="form-range" id="qualityRange" name="quality" min="1" max="100" value="85" form="uploadForm">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>1%</span>
+                            <span>50%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+
+                    <!-- Format Options -->
+                    <div class="mb-4">
+                        <label class="form-label">Output Format</label>
+                        <div class="format-selector">
+                            <input type="hidden" name="format" id="formatInput" value="" form="uploadForm">
+                            <div class="format-option" data-format="jpg">JPG</div>
+                            <div class="format-option" data-format="png">PNG</div>
+                            <div class="format-option" data-format="webp">WEBP</div>
+                            <div class="format-option active" data-format="">Original</div>
+                        </div>
+                    </div>
+
+                    <!-- Resize Options -->
+                    <div class="section-title">
+                        <h4><i class="fas fa-expand-arrows-alt me-2"></i> Resize Options</h4>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="resize_type" id="resizePercentage" value="percentage" checked>
+                            <label class="form-check-label" for="resizePercentage">Percentage</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="resize_type" id="resizeDimensions" value="dimensions">
+                            <label class="form-check-label" for="resizeDimensions">Exact Dimensions</label>
+                        </div>
+                    </div>
+                    
+                    <div id="percentageResizeContainer" class="slider-container">
+                        <label for="resizeRange" class="form-label">Scale: <span id="resizeValue" class="slider-value">100</span>%</label>
+                        <input type="range" class="form-range" id="resizeRange" name="resize_percentage" min="10" max="100" value="100" form="uploadForm">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>10%</span>
+                            <span>50%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                    
+                    <div id="dimensionsResizeContainer" class="mb-4" style="display:none;">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" id="resizeWidth" placeholder="Width (px)">
+                            <span class="input-group-text">x</span>
+                            <input type="text" class="form-control" id="resizeHeight" placeholder="Height (px)">
+                            <button class="btn btn-outline-secondary" type="button" id="setDimensions">Set</button>
+                        </div>
+                        <input type="hidden" name="resize_dimensions" id="resizeDimensionsInput" form="uploadForm">
+                        <small class="text-muted">Leave empty to maintain aspect ratio</small>
+                    </div>
+
+                    <!-- Image Filters -->
+                    <div class="section-title">
+                        <h4><i class="fas fa-filter me-2"></i> Image Filters</h4>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <input type="hidden" name="filter" id="filterInput" value="" form="uploadForm">
+                        <div class="filter-option active" data-filter="">None</div>
+                        <div class="filter-option" data-filter="blur">Blur</div>
+                        <div class="filter-option" data-filter="sharpen">Sharpen</div>
+                        <div class="filter-option" data-filter="contour">Contour</div>
+                        <div class="filter-option" data-filter="emboss">Emboss</div>
+                        <div class="filter-option" data-filter="edge_enhance">Edge Enhance</div>
+                        <div class="filter-option" data-filter="smooth">Smooth</div>
+                        <div class="filter-option" data-filter="grayscale">Grayscale</div>
+                    </div>
+
+                    <!-- Image Adjustments -->
+                    <div class="section-title">
+                        <h4><i class="fas fa-adjust me-2"></i> Image Adjustments</h4>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label for="brightnessRange" class="form-label">Brightness: <span id="brightnessValue" class="slider-value">1.0</span></label>
+                        <input type="range" class="form-range" id="brightnessRange" name="brightness" min="0" max="2" step="0.1" value="1.0" form="uploadForm">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Darker (0)</span>
+                            <span>Normal (1)</span>
+                            <span>Brighter (2)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label for="contrastRange" class="form-label">Contrast: <span id="contrastValue" class="slider-value">1.0</span></label>
+                        <input type="range" class="form-range" id="contrastRange" name="contrast" min="0" max="2" step="0.1" value="1.0" form="uploadForm">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Less (0)</span>
+                            <span>Normal (1)</span>
+                            <span>More (2)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label for="saturationRange" class="form-label">Saturation: <span id="saturationValue" class="slider-value">1.0</span></label>
+                        <input type="range" class="form-range" id="saturationRange" name="saturation" min="0" max="2" step="0.1" value="1.0" form="uploadForm">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Less (0)</span>
+                            <span>Normal (1)</span>
+                            <span>More (2)</span>
+                        </div>
+                    </div>
+
+                    <!-- Privacy Options -->
+                    <div class="section-title">
+                        <h4><i class="fas fa-shield-alt me-2"></i> Privacy Options</h4>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="removeExif" name="remove_exif" form="uploadForm">
+                            <label class="form-check-label" for="removeExif">
+                                Remove EXIF Data (Location, Camera Info, etc.)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>ComprezIT - A simple tool to compress and optimize your images</p>
+            <p><small>&copy; 2025 ComprezIT. All rights reserved.</small></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const filePreview = document.getElementById('filePreview');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const removeFile = document.getElementById('removeFile');
+            const compressBtn = document.getElementById('compressBtn');
+            const qualityRange = document.getElementById('qualityRange');
+            const qualityValue = document.getElementById('qualityValue');
+            const resizeRange = document.getElementById('resizeRange');
+            const resizeValue = document.getElementById('resizeValue');
+            const formatOptions = document.querySelectorAll('.format-option');
+            const formatInput = document.getElementById('formatInput');
+            const filterOptions = document.querySelectorAll('.filter-option');
+            const filterInput = document.getElementById('filterInput');
+            const brightnessRange = document.getElementById('brightnessRange');
+            const brightnessValue = document.getElementById('brightnessValue');
+            const contrastRange = document.getElementById('contrastRange');
+            const contrastValue = document.getElementById('contrastValue');
+            const saturationRange = document.getElementById('saturationRange');
+            const saturationValue = document.getElementById('saturationValue');
+            const resizePercentage = document.getElementById('resizePercentage');
+            const resizeDimensions = document.getElementById('resizeDimensions');
+            const percentageResizeContainer = document.getElementById('percentageResizeContainer');
+            const dimensionsResizeContainer = document.getElementById('dimensionsResizeContainer');
+            const resizeWidth = document.getElementById('resizeWidth');
+            const resizeHeight = document.getElementById('resizeHeight');
+            const setDimensions = document.getElementById('setDimensions');
+            const resizeDimensionsInput = document.getElementById('resizeDimensionsInput');
+            const exifDataContainer = document.getElementById('exifDataContainer');
+            const toggleExif = document.getElementById('toggleExif');
+            const exifDataContent = document.getElementById('exifDataContent');
+            const exifLoader = document.getElementById('exifLoader');
+            const exifData = document.getElementById('exifData');
+            
+            // Handle file upload area click
+            fileUploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // Handle file drag & drop
+            fileUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = '#4a6baf';
+                fileUploadArea.style.backgroundColor = '#f8f9fa';
+            });
+            
+            fileUploadArea.addEventListener('dragleave', function() {
+                fileUploadArea.style.borderColor = '#ddd';
+                fileUploadArea.style.backgroundColor = 'transparent';
+            });
+            
+            fileUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = '#ddd';
+                fileUploadArea.style.backgroundColor = 'transparent';
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    updateFilePreview();
+                }
+            });
+            
+            // Handle file selection
+            fileInput.addEventListener('change', updateFilePreview);
+            
+            // Handle remove file button
+            removeFile.addEventListener('click', function() {
+                fileInput.value = '';
+                fileUploadArea.style.display = 'block';
+                filePreview.style.display = 'none';
+                exifDataContainer.style.display = 'none';
+                compressBtn.disabled = true;
+            });
+            
+            // Handle quality slider
+            qualityRange.addEventListener('input', function() {
+                qualityValue.textContent = this.value;
+            });
+            
+            // Handle resize slider
+            resizeRange.addEventListener('input', function() {
+                resizeValue.textContent = this.value;
+            });
+            
+            // Handle format selection
+            formatOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    formatOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    formatInput.value = this.getAttribute('data-format');
+                });
+            });
+            
+            // Handle filter selection
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    filterOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    filterInput.value = this.getAttribute('data-filter');
+                });
+            });
+            
+            // Handle brightness slider
+            brightnessRange.addEventListener('input', function() {
+                brightnessValue.textContent = this.value;
+            });
+            
+            // Handle contrast slider
+            contrastRange.addEventListener('input', function() {
+                contrastValue.textContent = this.value;
+            });
+            
+            // Handle saturation slider
+            saturationRange.addEventListener('input', function() {
+                saturationValue.textContent = this.value;
+            });
+            
+            // Handle resize type toggle
+            resizePercentage.addEventListener('change', function() {
+                if (this.checked) {
+                    percentageResizeContainer.style.display = 'block';
+                    dimensionsResizeContainer.style.display = 'none';
+                    resizeDimensionsInput.value = '';
+                }
+            });
+            
+            resizeDimensions.addEventListener('change', function() {
+                if (this.checked) {
+                    percentageResizeContainer.style.display = 'none';
+                    dimensionsResizeContainer.style.display = 'block';
+                    resizeRange.value = 100;
+                    resizeValue.textContent = 100;
+                }
+            });
+            
+            // Handle setting dimensions
+            setDimensions.addEventListener('click', function() {
+                const width = resizeWidth.value.trim();
+                const height = resizeHeight.value.trim();
+                
+                if (width === '' && height === '') {
+                    resizeDimensionsInput.value = '';
+                    alert('Please enter at least one dimension.');
+                    return;
+                }
+                
+                resizeDimensionsInput.value = `${width}x${height}`;
+                alert(`Dimensions set to ${width}x${height}`);
+            });
+            
+            // Toggle EXIF data
+            toggleExif.addEventListener('click', function() {
+                if (exifDataContent.style.display === 'none') {
+                    exifDataContent.style.display = 'block';
+                    toggleExif.innerHTML = '<i class="fas fa-chevron-up"></i>';
+                    
+                    // Load EXIF data if not already loaded
+                    if (exifData.innerHTML === '') {
+                        loadExifData();
+                    }
+                } else {
+                    exifDataContent.style.display = 'none';
+                    toggleExif.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                }
+            });
+            
+            // Update file preview
+            function updateFilePreview() {
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    fileName.textContent = file.name;
+                    fileSize.textContent = 'Size: ' + formatFileSize(file.size);
+                    fileUploadArea.style.display = 'none';
+                    filePreview.style.display = 'block';
+                    exifDataContainer.style.display = 'block';
+                    compressBtn.disabled = false;
+                    
+                    // Reset EXIF data
+                    exifDataContent.style.display = 'none';
+                    toggleExif.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                    exifData.innerHTML = '';
+                }
+            }
+            
+            // Load EXIF data
+            function loadExifData() {
+                if (!fileInput.files || !fileInput.files[0]) return;
+                
+                exifLoader.style.display = 'block';
+                exifData.innerHTML = '';
+                
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // Upload the file first
+                fetch('/compress', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Extract filename from the response
+                    const match = html.match(/original_filename=['"]([^'"]+)['"]/);
+                    if (match && match[1]) {
+                        const filename = match[1];
+                        
+                        // Now fetch the EXIF data
+                        fetch(`/get_exif/${filename}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                exifLoader.style.display = 'none';
+                                
+                                if (Object.keys(data).length === 0 || data.error) {
+                                    exifData.innerHTML = '<div class="alert alert-info">No EXIF data found in this image.</div>';
+                                    return;
+                                }
+                                
+                                let html = '<table class="table table-sm table-striped">';
+                                html += '<thead><tr><th>Property</th><th>Value</th></tr></thead><tbody>';
+                                
+                                for (const [key, value] of Object.entries(data)) {
+                                    html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                                }
+                                
+                                html += '</tbody></table>';
+                                exifData.innerHTML = html;
+                            })
+                            .catch(error => {
+                                exifLoader.style.display = 'none';
+                                exifData.innerHTML = `<div class="alert alert-danger">Error loading EXIF data: ${error}</div>`;
+                            });
+                    } else {
+                        exifLoader.style.display = 'none';
+                        exifData.innerHTML = '<div class="alert alert-warning">Could not process image for EXIF data.</div>';
+                    }
+                })
+                .catch(error => {
+                    exifLoader.style.display = 'none';
+                    exifData.innerHTML = `<div class="alert alert-danger">Error uploading image: ${error}</div>`;
+                });
+            }
+            
+            // Format file size
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+                else return (bytes / 1048576).toFixed(2) + ' MB';
+            }
+        });
+    </script>
+</body>
+</html>
